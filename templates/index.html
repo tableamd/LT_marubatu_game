@@ -1,0 +1,91 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>マルバツゲーム</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        //emit: イベントを発信している
+        //on: イベントを待ち受けている
+
+        $(document).ready(function(){
+            namespace = '/test'; 
+            var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+            var uuid = "";
+            var koma = "";
+
+            //サーバ側からのコールバック関数
+            socket.on('my response', function(msg) {
+                var data = msg.data
+                data = data.replace(/o/g,"<font color='red'>o</font>")
+                data = data.replace(/x/g,"<font color='red'>x</font>")
+                $(".msg").html(data);
+
+                if(msg.me && !msg.win){
+                    $(".turn").html("あなたのターンです")
+                    $("#select").removeAttr("disabled");
+                }
+                else{
+                    $(".turn").html("")
+                }
+
+                if(msg.win != 0){
+                    if(msg.win == koma){
+                        $("#you").html("あなたの勝ちです！")
+                    }
+                    else{
+                        $("#you").html("あなたの負けです。。。")
+                    }
+                    $("#select").attr('disabled', 'disabled')
+                }
+            });
+
+            //一番最初にuuid, komaを振り当てるコールバック関数
+            socket.on("first_connect", function(msg){
+                if(!uuid && !koma){
+                    uuid = msg.id;
+                    koma = msg.koma;
+                    $("#you").append("あなたのマークは"+koma+"です")
+                }
+
+                if(koma == "o")
+                    $("#select").attr('disabled', 'disabled')
+            })
+
+            $('[name=numbers]').change(function() {
+                var data = $('[name=numbers] option:selected').val();
+                if(data=="default")
+                    return false;
+                var mas = data
+                socket.emit('my broadcast event', 
+                            {masu: mas,
+                             mykoma: koma,
+                             from: uuid});
+                this.blur()
+                $("#select").attr('disabled', 'disabled')
+                return false;
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>オソライソマルバツゲーム</h1>
+    <img src="/view_upload/marubatu.png" width="256" height="144"></img><br>
+    マスを選択：
+    <select name='numbers' id="select">
+        <option value="default">数字を選んでください</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+    </select>
+    <h2 id="you"></h2>
+    <p class="msg"></p>
+    <p class="turn"></p>
+</body>
+</html>
