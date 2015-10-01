@@ -162,4 +162,4 @@ def test_disconnect():
     del goban[index]
 
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app,transports=['websocket'],close_timeout=10)
